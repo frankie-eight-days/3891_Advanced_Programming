@@ -1,0 +1,191 @@
+#include <iostream>
+#include <fstream>
+#include <vector>
+#include <sstream>
+#include <algorithm>  
+
+#include "CardDeck.h"
+#include "Card.h"
+
+using namespace std;
+
+CardDeck::CardDeck(std::string name) : deckName(name){};
+
+CardDeck::~CardDeck()
+{
+	for(int i = 0; i < drawPile.size(); i++)
+	{
+		delete drawPile[i];
+		drawPile[i] = nullptr;
+	}
+	for(int i = 0; i < discardPile.size(); i++)
+	{
+		delete discardPile[i];
+		discardPile[i] = nullptr;
+	}
+};
+
+vector<string> split(vector<string> params)
+{
+	vector<string> tokens;
+	for(int i = 0; i < params.size(); i++)
+	{
+		stringstream stream(params[i]);
+		string token;
+		while(getline(stream, token, ','))
+		{
+			tokens.push_back(token);
+		}
+	}
+	
+	return tokens;
+}
+
+vector<string> scrub(vector<string> params)
+{
+	for(int i = 0; i < params.size(); i++)
+	{
+		if(params[i].at(0) == ' ')
+		{
+			params[i].erase(0,1);
+		}
+	}
+
+	return params;
+}
+
+Card* makeCard(int i, vector<string> params, CardDeck* deck)
+{
+	string type = params[i];
+	string flavourText = params[i+1];
+	int amount1 = atoi(params[i+2].c_str());
+	int amount2 = atoi(params[i+3].c_str());
+
+	if(type=="PayMoney")
+	{
+		return (new PayMoney(flavourText, deck, amount1));
+	}
+	if(type=="GetMoney")
+	{
+		return (new GetMoney(flavourText, deck, amount1));
+	}
+	if(type=="PayOthers")
+	{
+		return (new PayOthers(flavourText, deck, amount1));
+	}
+	if(type=="GetFromOthers")
+	{
+		return (new GetFromOthers(flavourText, deck, amount1));
+	}
+	if(type=="PayPer")
+	{
+		return (new PayPer(flavourText, deck, amount1, amount2));
+	}
+	if(type=="GetOutOfJail")
+	{
+		return (new GetOutOfJail(flavourText, deck));
+	}
+	if(type=="GoToJail")
+	{
+		return (new GoToJail(flavourText, deck));
+	}
+	if(type=="AdvanceToSpecific")
+	{
+		return (new AdvanceToSpecific(flavourText, deck, amount1));
+	}	
+	if(type=="AdvanceToNearest")
+	{
+		return (new AdvanceToNearest(flavourText, deck, amount1));
+	}	
+	if(type=="MoveBack")
+	{
+		return (new MoveBack(flavourText, deck, amount1));
+	}
+
+	return nullptr;
+}
+
+CardDeck* CardDeck::CreateFromFile(std::string filename, std::string deckname)
+{
+	ifstream file(filename);
+
+	CardDeck* deck; 
+	if(file.good())
+	{
+		deck = new CardDeck(deckname);
+	}else
+	{
+		deck = nullptr;
+	}
+
+	string rawText;
+	vector<string> tokens;
+
+	while (getline(file, rawText, '\n') && file.good())
+	{
+		tokens.push_back(rawText);
+	}
+	
+	tokens = split(tokens);
+	tokens = scrub(tokens);
+
+	for(int i = 0; i < tokens.size(); i+=4)
+	{
+		Card* cardToAdd = makeCard(i, tokens, deck);
+		deck->addCardToDeck(cardToAdd);
+	}
+
+	file.close();
+	return deck;
+}
+
+void CardDeck::displayDeck()
+{
+	cout << "DRAW PILE: " << endl;
+	for(int i = 0; i < drawPile.size(); i++)
+	{
+		cout << drawPile[i]->text() << endl;
+	}
+	cout << endl << endl << endl << "DISCARD PILE: " << endl;
+	for(int i = 0; i < discardPile.size(); i++)
+	{
+		cout << discardPile[i]->text() << endl;
+	}
+}
+
+Card* CardDeck::draw()
+{
+	Card* cardDrawn = drawPile[0];
+	drawPile.erase(drawPile.begin());
+
+	if(dynamic_cast<GetOutOfJail*>(cardDrawn) == nullptr)
+	{
+		discardPile.push_back(cardDrawn);
+	}
+
+	return cardDrawn;
+}
+
+std::string CardDeck::getName()
+{
+	return deckName;
+}
+
+void CardDeck::shuffle()
+{
+	// Moves any and all cards from the discard pile to the draw pile
+	for(int i = 0; i < discardPile.size(); i++)
+	{
+		drawPile.push_back(discardPile[i]);
+	}
+	// Then deletes everything in the discard pile
+	discardPile.clear();
+	
+	// Then uses the std algorithim random_shuffle to shuffle the entire deck
+	random_shuffle(drawPile.begin(), drawPile.end());
+}
+
+void CardDeck::addCardToDeck(Card* c)
+{
+	discardPile.push_back(c);
+}

@@ -1,0 +1,4 @@
+MotorVehicle.cpp:4:17: error: expected namespace name
+using namespace MotorVehicle;
+                ^
+1 error generated.

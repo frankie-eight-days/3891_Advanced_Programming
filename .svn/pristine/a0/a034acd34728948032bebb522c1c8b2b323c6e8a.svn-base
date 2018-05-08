@@ -1,0 +1,74 @@
+#include <string>
+#include <vector>
+#include <iostream>
+#include <algorithm>  
+
+#include "CardDeck.h"
+#include "Card.h"
+
+using namespace std;
+
+CardDeck::CardDeck(std::string name) : deckName(name) {}
+
+/////////////          TEST CODE       //////////////////////
+/*********************************************************
+void CardDeck::displayDeck()
+{
+	cout << "DRAW PILE: ";
+	for(int i = 0; i < drawPile.size(); i++)
+	{
+		Card c = *drawPile[i];
+		cout << c.getText() << ", " ;
+	}
+	
+	cout << endl << "Discard Pile: ";
+	for(int i = 0; i < discardPile.size(); i++)
+	{
+		Card c = *discardPile[i];
+		cout << c.getText() << ", ";
+	}
+	cout << endl << endl;;
+}
+/*********************************************************/
+
+Card* CardDeck::draw()
+{
+	if(drawPile.size() == 0)
+	{
+		shuffle();
+	}
+	// Takes a card off the top of the *pile*
+	Card* cardDrawn = drawPile[drawPile.size()-1];
+	// Moves the pointer from the draw pile to the discard pile
+	discardPile.push_back(drawPile[drawPile.size()-1]);
+	// Erases that card from the draw pile
+	drawPile.erase(drawPile.end()-1);
+
+	return cardDrawn;
+}
+
+std::string CardDeck::getName()
+{
+	// Returns the name of the deck
+	return deckName;
+}
+
+void CardDeck::shuffle()
+{
+	// Moves any and all cards from the discard pile to the draw pile
+	for(int i = 0; i < discardPile.size(); i++)
+	{
+		drawPile.push_back(discardPile[i]);
+	}
+	// Then deletes everything in the discard pile
+	discardPile.clear();
+	
+	// Then uses the std algorithim random_shuffle to shuffle the entire deck
+	random_shuffle(drawPile.begin(), drawPile.end());
+}
+
+void CardDeck::addCardToDeck(Card* c)
+{
+	// Adds the pointer to the drawpile deck
+	drawPile.push_back(c);
+}
